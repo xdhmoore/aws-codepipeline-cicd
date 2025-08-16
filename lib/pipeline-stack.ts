@@ -1,19 +1,36 @@
 import { Repository } from 'aws-cdk-lib/aws-codecommit'
 import { BuildSpec } from 'aws-cdk-lib/aws-codebuild'
+import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
 import { CfnOutput, Stack, type StackProps } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 
+
+
+// Stack:
+// arn:aws:cloudformation:us-west-2:178647777806:stack/CodePipeline/9ac351c0-7a41-11f0-89cc-06f8e35f86c5
+
 export class CodePipelineStack extends Stack {
   constructor (scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
 
-    const repo = new Repository(this, 'Repository', {
-      repositoryName: 'SampleRepository',
-      description: 'This is sample repository for the project.'
-    })
+    //   const repo = new Repository(this, 'Repository', {
+    //    repositoryName: 'SampleRepository',
+    //    description: 'This is sample repository for the project.'
+    //  })
+    // const gitHubSource = codebuild.Source.gitHub({
+    //   owner: 'aws',
+    //   webhookTriggersBatchBuild: true, // optional, default is false
+    //   webhookFilters: [
+    //     codebuild.FilterGroup
+    //       .inEventOf(codebuild.EventAction.WORKFLOW_JOB_QUEUED)
+    //       .andRepositoryNameIs('aws-.*')
+    //       .andRepositoryNameIsNot('aws-cdk-lib'),
+    //   ], // optional, by default all pushes and Pull Requests will trigger a build
+    // });
+
 
     const validatePolicy = new PolicyStatement({
       actions: [
@@ -23,11 +40,24 @@ export class CodePipelineStack extends Stack {
       resources: ['*']
     })
 
+    // TODO make it so these files autoformat
+    // TODO make dangling commas acceptable
+    // TODO make semicolons acceptable or required
+    const githubConnection = CodePipelineSource.connection(
+      'xdhmoore/uPortal-start',
+      'master',
+      {
+        // TODO change ide settings so this doesnt wrap
+        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f'
+
+      },
+    );
+
     const pipeline = new CodePipeline(this, 'Pipeline', {
       crossAccountKeys: true,
       enableKeyRotation: true,
       synth: new ShellStep('Synth', {
-        input: CodePipelineSource.codeCommit(repo, 'main'),
+        input: githubConnection,
         installCommands: [
           'make warming'
         ],
@@ -162,7 +192,7 @@ export class CodePipelineStack extends Stack {
     })
     // Output
     new CfnOutput(this, 'RepositoryName', {
-      value: repo.repositoryName
+      value: 'uPortal-start'
     })
   }
 }
