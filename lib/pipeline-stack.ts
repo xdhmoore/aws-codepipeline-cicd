@@ -112,20 +112,6 @@ export class CodePipelineStack extends Stack {
     pipeline.addStage(devStage, {
       pre: [
         buildUPortalStep,
-        new CodeBuildStep('DockerBuildUPortal-Tomcat', {
-          input: buildUPortalStep,
-          // env: {
-          //   STAGE: devStack.stackName
-          // },
-          commands: [
-            './gradlew dockerBuildImageTomcat',
-            'docker push ' + ecrRepo.repositoryUri + ':uportal-tomcat',
-          ],
-          buildEnvironment: {
-            privileged: true, // Required for Docker commands
-            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
-          }
-        }),
         new CodeBuildStep('DockerBuildUPortal-Cli', {
           input: buildUPortalStep,
           // env: {
