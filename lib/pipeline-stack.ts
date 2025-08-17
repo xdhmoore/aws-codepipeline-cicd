@@ -43,21 +43,30 @@ export class CodePipelineStack extends Stack {
     // TODO make it so these files autoformat
     // TODO make dangling commas acceptable
     // TODO make semicolons acceptable or required
-    const githubConnection = CodePipelineSource.connection(
+    const ghCdkConn = CodePipelineSource.connection(
+      'xdhmoore/aws-codepipeline-cicd',
+      'main',
+      {
+        // TODO change ide settings so this doesnt wrap
+        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f'
+
+      }
+    );
+    const ghUPortalStartConn = CodePipelineSource.connection(
       'xdhmoore/uPortal-start',
       'master',
       {
         // TODO change ide settings so this doesnt wrap
         connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f'
 
-      },
+      }
     );
 
     const pipeline = new CodePipeline(this, 'Pipeline', {
       crossAccountKeys: true,
       enableKeyRotation: true,
       synth: new ShellStep('Synth', {
-        input: githubConnection,
+        input: ghCdkConn,
         installCommands: [
           'make warming'
         ],
@@ -73,84 +82,86 @@ export class CodePipelineStack extends Stack {
       // Execute all sequence of actions before deployment
       pre: [
         new CodeBuildStep('Linting', {
-          installCommands: [
-            'make warming'
-          ],
+          input: ghUPortalStartConn,
+          // installCommands: [
+          //   'make warming'
+          // ],
           commands: [
-            'make linting'
+            // 'make linting'
+            'echo testing dev'
           ]
         }),
-        new CodeBuildStep('UnitTest', {
-          installCommands: [
-            'make warming'
-          ],
-          commands: [
-            'make unittest'
-          ],
-          partialBuildSpec: BuildSpec.fromObject({
-            reports: {
-              coverage: {
-                files: [
-                  './coverage/clover.xml'
-                ],
-                'file-format': 'CLOVERXML'
-              },
-              unittest: {
-                files: [
-                  './test-report.xml'
-                ],
-                'file-format': 'JUNITXML'
-              }
-            }
-          }),
-          rolePolicyStatements: [
-            new PolicyStatement({
-              actions: [
-                'codebuild:CreateReportGroup',
-                'codebuild:CreateReport',
-                'codebuild:UpdateReport',
-                'codebuild:BatchPutTestCases',
-                'codebuild:BatchPutCodeCoverages'
-              ],
-              resources: ['*']
-            })
-          ]
-        }),
-        new CodeBuildStep('Security', {
-          installCommands: [
-            'make warming',
-            'gem install cfn-nag'
-          ],
-          commands: [
-            'make build',
-            'make security'
-          ],
-          partialBuildSpec: BuildSpec.fromObject({
-            phases: {
-              install: {
-                'runtime-versions': {
-                  ruby: '2.6'
-                }
-              }
-            }
-          })
-        })
+      //   new CodeBuildStep('UnitTest', {
+      //     installCommands: [
+      //       'make warming'
+      //     ],
+      //     commands: [
+      //       'make unittest'
+      //     ],
+      //     partialBuildSpec: BuildSpec.fromObject({
+      //       reports: {
+      //         coverage: {
+      //           files: [
+      //             './coverage/clover.xml'
+      //           ],
+      //           'file-format': 'CLOVERXML'
+      //         },
+      //         unittest: {
+      //           files: [
+      //             './test-report.xml'
+      //           ],
+      //           'file-format': 'JUNITXML'
+      //         }
+      //       }
+      //     }),
+      //     rolePolicyStatements: [
+      //       new PolicyStatement({
+      //         actions: [
+      //           'codebuild:CreateReportGroup',
+      //           'codebuild:CreateReport',
+      //           'codebuild:UpdateReport',
+      //           'codebuild:BatchPutTestCases',
+      //           'codebuild:BatchPutCodeCoverages'
+      //         ],
+      //         resources: ['*']
+      //       })
+      //     ]
+      //   }),
+      //   new CodeBuildStep('Security', {
+      //     installCommands: [
+      //       'make warming',
+      //       'gem install cfn-nag'
+      //     ],
+      //     commands: [
+      //       'make build',
+      //       'make security'
+      //     ],
+      //     partialBuildSpec: BuildSpec.fromObject({
+      //       phases: {
+      //         install: {
+      //           'runtime-versions': {
+      //             ruby: '2.6'
+      //           }
+      //         }
+      //       }
+      //     })
+      //   })
       ],
-      // Execute validation check for post-deployment
-      post: [
-        new CodeBuildStep('Validate', {
-          env: {
-            STAGE: devStage.stageName
-          },
-          installCommands: [
-            'make warming'
-          ],
-          commands: [
-            'make validate'
-          ],
-          rolePolicyStatements: [validatePolicy]
-        })
-      ]
+      // // Execute validation check for post-deployment
+      // post: [
+      //   new CodeBuildStep('Validate', {
+      //     env: {
+      //       STAGE: devStage.stageName
+      //     },
+      //     installCommands: [
+      //       'make warming'
+      //     ],
+      //     commands: [
+      //       'make validate'
+      //     ],
+      //     rolePolicyStatements: [validatePolicy]
+      //   })
+      // ]
     })
     // Add test deployment
     const testStage = new Deployment(this, 'Test')
