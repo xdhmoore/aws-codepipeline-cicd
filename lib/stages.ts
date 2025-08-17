@@ -8,7 +8,7 @@ export class Deployment extends Stage {
     super(scope, id, props)
     // Deploy the main stack in the Deployment stage
     new MainStack(this, 'MainStack', {
-      description: 'This is the main stack with IaC.'
+      description: 'This is the main stack.'
     })
   }
 }

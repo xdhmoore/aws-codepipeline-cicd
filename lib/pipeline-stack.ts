@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/comma-dangle */
 import { Repository } from 'aws-cdk-lib/aws-codecommit'
 import { BuildSpec } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
-import { CfnOutput, Stack, type StackProps } from 'aws-cdk-lib'
+import { CfnOutput, Stack, Stage, type StackProps } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import { MainStack } from './main-stack'
 
 
 
@@ -76,11 +78,23 @@ export class CodePipelineStack extends Stack {
           'make build'
         ]
       })
-    })
+    });
+
     const ecrRepo = new ecr.Repository(this, 'UPortalECRRepo');
 
     // Add dev deployment
-    const devStage = new Stack(this, 'DevDockerBuildStage');
+    // class DevStage extends Stage {
+    //   constructor(scope: Construct, id: string, props?: StackProps) {
+    //     super(scope, id, props);
+
+    //     new MainStack(this, 'DevMainStack', {
+    //       description: 'This is the main stack for the Dev stage.'
+    //     });
+    //   }
+    // }
+    // const devStage = new DevStage(this, 'DevStage');
+    const devStage = new Deployment(this, 'Dev');
+
 
     const buildUPortalStep = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
@@ -90,18 +104,32 @@ export class CodePipelineStack extends Stack {
         './gradlew ./tomcatDeploy',
       ],
       primaryOutputDirectory: '.',
-    }),
+    });
 
     pipeline.addStage(devStage, {
-      stackSteps: [
+      pre: [
+        buildUPortalStep,
+        new CodeBuildStep('DockerBuildUPortal-Tomcat', {
+          input: buildUPortalStep,
+          // env: {
+          //   STAGE: devStack.stackName
+          // },
+          commands: [
+            './gradlew dockerBuildImageTomcat',
+            'docker push ' + ecrRepo.repositoryUri + ':uportal-tomcat',
+          ],
+          buildEnvironment: {
+            privileged: true // Required for Docker commands
+          }
+        }),
         new CodeBuildStep('DockerBuildUPortal-Cli', {
           input: buildUPortalStep,
           // env: {
-          //   STAGE: devStage.stageName
+          //   STAGE: devStack.stackName
           // },
           commands: [
             './gradlew dockerBuildImageCli',
-            'docker push ${ecrRepo.repositoryUri}:uportal-cli',
+            'docker push ' + ecrRepo.repositoryUri + ':uportal-cli',
           ],
           buildEnvironment: {
             privileged: true // Required for Docker commands
@@ -110,110 +138,112 @@ export class CodePipelineStack extends Stack {
         new CodeBuildStep('DockerBuildUPortal-Demo', {
           input: buildUPortalStep,
           // env: {
-          //   STAGE: devStage.stageName
+          //   STAGE: devStack.stackName
           // },
           commands: [
             './gradlew dockerBuildImageDemo',
-            'docker push ${ecrRepo.repositoryUri}:uportal-demo',
+            'docker push ' + ecrRepo.repositoryUri + ':uportal-demo',
           ],
           buildEnvironment: {
             privileged: true // Required for Docker commands
           }
         })
-    })
+      ]
+    });
+
 
     // pipeline.addStage(devStage, {
-      // // Execute all sequence of actions before deployment
-      // pre: [
-      //   new CodeBuildStep('Linting', {
-      //     input: ghUPortalStartConn,
-      //     // installCommands: [
-      //     //   'make warming'
-      //     // ],
-      //     commands: [
-      //       // 'make linting'
-      //       'echo testing dev'
-      //     ]
-      //   }),
-      //   new CodeBuildStep('UnitTest', {
-      //     installCommands: [
-      //       'make warming'
-      //     ],
-      //     commands: [
-      //       'make unittest'
-      //     ],
-      //     partialBuildSpec: BuildSpec.fromObject({
-      //       reports: {
-      //         coverage: {
-      //           files: [
-      //             './coverage/clover.xml'
-      //           ],
-      //           'file-format': 'CLOVERXML'
-      //         },
-      //         unittest: {
-      //           files: [
-      //             './test-report.xml'
-      //           ],
-      //           'file-format': 'JUNITXML'
-      //         }
-      //       }
-      //     }),
-      //     rolePolicyStatements: [
-      //       new PolicyStatement({
-      //         actions: [
-      //           'codebuild:CreateReportGroup',
-      //           'codebuild:CreateReport',
-      //           'codebuild:UpdateReport',
-      //           'codebuild:BatchPutTestCases',
-      //           'codebuild:BatchPutCodeCoverages'
-      //         ],
-      //         resources: ['*']
-      //       })
-      //     ]
-      //   }),
-      //   new CodeBuildStep('Security', {
-      //     installCommands: [
-      //       'make warming',
-      //       'gem install cfn-nag'
-      //     ],
-      //     commands: [
-      //       'make build',
-      //       'make security'
-      //     ],
-      //     partialBuildSpec: BuildSpec.fromObject({
-      //       phases: {
-      //         install: {
-      //           'runtime-versions': {
-      //             ruby: '2.6'
-      //           }
-      //         }
-      //       }
-      //     })
-      //   })
-      // ],
-      // stackSteps: [
-      //   new CodeBuildStep('Deploy', {
-      //     input: ghUPortalStartConn,
-      //     env: {
-      //       STAGE: devStage.stageName
-      //     },
-      //     installCommands: [
-      //       'make warming'
-      // // // Execute validation check for post-deployment
-      // // post: [
-      // //   new CodeBuildStep('Validate', {
-      // //     env: {
-      // //       STAGE: devStage.stageName
-      // //     },
-      // //     installCommands: [
-      // //       'make warming'
-      // //     ],
-      // //     commands: [
-      // //       'make validate'
-      // //     ],
-      // //     rolePolicyStatements: [validatePolicy]
-      // //   })
-      // // ]
+    // // Execute all sequence of actions before deployment
+    // pre: [
+    //   new CodeBuildStep('Linting', {
+    //     input: ghUPortalStartConn,
+    //     // installCommands: [
+    //     //   'make warming'
+    //     // ],
+    //     commands: [
+    //       // 'make linting'
+    //       'echo testing dev'
+    //     ]
+    //   }),
+    //   new CodeBuildStep('UnitTest', {
+    //     installCommands: [
+    //       'make warming'
+    //     ],
+    //     commands: [
+    //       'make unittest'
+    //     ],
+    //     partialBuildSpec: BuildSpec.fromObject({
+    //       reports: {
+    //         coverage: {
+    //           files: [
+    //             './coverage/clover.xml'
+    //           ],
+    //           'file-format': 'CLOVERXML'
+    //         },
+    //         unittest: {
+    //           files: [
+    //             './test-report.xml'
+    //           ],
+    //           'file-format': 'JUNITXML'
+    //         }
+    //       }
+    //     }),
+    //     rolePolicyStatements: [
+    //       new PolicyStatement({
+    //         actions: [
+    //           'codebuild:CreateReportGroup',
+    //           'codebuild:CreateReport',
+    //           'codebuild:UpdateReport',
+    //           'codebuild:BatchPutTestCases',
+    //           'codebuild:BatchPutCodeCoverages'
+    //         ],
+    //         resources: ['*']
+    //       })
+    //     ]
+    //   }),
+    //   new CodeBuildStep('Security', {
+    //     installCommands: [
+    //       'make warming',
+    //       'gem install cfn-nag'
+    //     ],
+    //     commands: [
+    //       'make build',
+    //       'make security'
+    //     ],
+    //     partialBuildSpec: BuildSpec.fromObject({
+    //       phases: {
+    //         install: {
+    //           'runtime-versions': {
+    //             ruby: '2.6'
+    //           }
+    //         }
+    //       }
+    //     })
+    //   })
+    // ],
+    // stackSteps: [
+    //   new CodeBuildStep('Deploy', {
+    //     input: ghUPortalStartConn,
+    //     env: {
+    //       STAGE: devStage.stageName
+    //     },
+    //     installCommands: [
+    //       'make warming'
+    // // // Execute validation check for post-deployment
+    // // post: [
+    // //   new CodeBuildStep('Validate', {
+    // //     env: {
+    // //       STAGE: devStage.stageName
+    // //     },
+    // //     installCommands: [
+    // //       'make warming'
+    // //     ],
+    // //     commands: [
+    // //       'make validate'
+    // //     ],
+    // //     rolePolicyStatements: [validatePolicy]
+    // //   })
+    // // ]
     // })
     // TODO remove Test stage
     // Add test deployment
