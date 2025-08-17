@@ -6,6 +6,7 @@ import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-
 import { CfnOutput, Stack, type StackProps } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 
 
@@ -32,6 +33,7 @@ export class CodePipelineStack extends Stack {
     // });
 
 
+    // TODO clean up event bus, and other things
     const validatePolicy = new PolicyStatement({
       actions: [
         'cloudformation:DescribeStacks',
@@ -75,22 +77,64 @@ export class CodePipelineStack extends Stack {
         ]
       })
     })
+    const ecrRepo = new ecr.Repository(this, 'UPortalECRRepo');
 
     // Add dev deployment
-    const devStage = new Deployment(this, 'Dev')
+    const devStage = new Stack(this, 'DevDockerBuildStage');
+
+    const buildUPortalStep = new CodeBuildStep('BuildUPortalJava', {
+      input: ghUPortalStartConn,
+      // TODO installCommands: [ ?
+      commands: [
+        './gradlew ./tomcatInstall',
+        './gradlew ./tomcatDeploy',
+      ],
+      primaryOutputDirectory: '.',
+    }),
+
     pipeline.addStage(devStage, {
-      // Execute all sequence of actions before deployment
-      pre: [
-        new CodeBuildStep('Linting', {
-          input: ghUPortalStartConn,
-          // installCommands: [
-          //   'make warming'
-          // ],
+      stackSteps: [
+        new CodeBuildStep('DockerBuildUPortal-Cli', {
+          input: buildUPortalStep,
+          // env: {
+          //   STAGE: devStage.stageName
+          // },
           commands: [
-            // 'make linting'
-            'echo testing dev'
-          ]
+            './gradlew dockerBuildImageCli',
+            'docker push ${ecrRepo.repositoryUri}:uportal-cli',
+          ],
+          buildEnvironment: {
+            privileged: true // Required for Docker commands
+          }
         }),
+        new CodeBuildStep('DockerBuildUPortal-Demo', {
+          input: buildUPortalStep,
+          // env: {
+          //   STAGE: devStage.stageName
+          // },
+          commands: [
+            './gradlew dockerBuildImageDemo',
+            'docker push ${ecrRepo.repositoryUri}:uportal-demo',
+          ],
+          buildEnvironment: {
+            privileged: true // Required for Docker commands
+          }
+        })
+    })
+
+    // pipeline.addStage(devStage, {
+      // // Execute all sequence of actions before deployment
+      // pre: [
+      //   new CodeBuildStep('Linting', {
+      //     input: ghUPortalStartConn,
+      //     // installCommands: [
+      //     //   'make warming'
+      //     // ],
+      //     commands: [
+      //       // 'make linting'
+      //       'echo testing dev'
+      //     ]
+      //   }),
       //   new CodeBuildStep('UnitTest', {
       //     installCommands: [
       //       'make warming'
@@ -146,23 +190,32 @@ export class CodePipelineStack extends Stack {
       //       }
       //     })
       //   })
-      ],
-      // // Execute validation check for post-deployment
-      // post: [
-      //   new CodeBuildStep('Validate', {
+      // ],
+      // stackSteps: [
+      //   new CodeBuildStep('Deploy', {
+      //     input: ghUPortalStartConn,
       //     env: {
       //       STAGE: devStage.stageName
       //     },
       //     installCommands: [
       //       'make warming'
-      //     ],
-      //     commands: [
-      //       'make validate'
-      //     ],
-      //     rolePolicyStatements: [validatePolicy]
-      //   })
-      // ]
-    })
+      // // // Execute validation check for post-deployment
+      // // post: [
+      // //   new CodeBuildStep('Validate', {
+      // //     env: {
+      // //       STAGE: devStage.stageName
+      // //     },
+      // //     installCommands: [
+      // //       'make warming'
+      // //     ],
+      // //     commands: [
+      // //       'make validate'
+      // //     ],
+      // //     rolePolicyStatements: [validatePolicy]
+      // //   })
+      // // ]
+    // })
+    // TODO remove Test stage
     // Add test deployment
     const testStage = new Deployment(this, 'Test')
     pipeline.addStage(testStage, {
