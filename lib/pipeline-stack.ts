@@ -98,7 +98,7 @@ export class CodePipelineStack extends Stack {
 
 
     // TODO don't run this step unless something in the repo changed. See this maybe:
- *  // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
+    // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
     const buildUPortalStep = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
       // TODO installCommands: [ ?
