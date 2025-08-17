@@ -114,6 +114,8 @@ export class CodePipelineStack extends Stack {
 
       // TODO the cache should depend on the uportal main repo commit as well
       commands: [
+        // TODO fix cacheing
+        /*
         `aws s3 cp s3://${commitCacheBucket.bucketName}/last-build-commit.txt last-build-commit.txt || echo "none" > last-build-commit.txt`,
         // Fetch previous commit from S3 (or default to 'none')
         // Compare with current commit
@@ -121,6 +123,7 @@ export class CodePipelineStack extends Stack {
         'LAST_COMMIT=$(cat last-build-commit.txt)',
         'if [ "$CURRENT_COMMIT" = "$LAST_COMMIT" ]; then echo "No new commit. Skipping build."; exit 0; fi',
         // TODO pull from the latest uportal gradle binaries to see if any changed. this could be a lot of them...
+*/
 
         // Install Java 8
         // TODO later version of java?
@@ -132,9 +135,11 @@ export class CodePipelineStack extends Stack {
         './gradlew tomcatInstall',
         './gradlew tomcatDeploy',
 
+        /*
         // Update commit SHA in local file and push to S3
         'echo $CURRENT_COMMIT > last-build-commit.txt',
         `aws s3 cp last-build-commit.txt s3://${commitCacheBucket.bucketName}/last-build-commit.txt`
+        */
       ],
       // TODO might be faster to do all this in one build step. idk maybe there is cacheing value in keeping them separate
       primaryOutputDirectory: '.',
