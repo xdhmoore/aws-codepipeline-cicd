@@ -156,6 +156,38 @@ export class CodePipelineStack extends Stack {
         })
       ]
     });
+
+
+    /*
+    TODO
+
+
+FROM gradle:6.9.1-jdk8-hotspot
+
+      check version of xXXX current apereo base image
+      check version of MY apereo base image
+      if different
+        build new image
+        push to ECR
+
+    */
+
+    const baseImage = "grradle:6.9.1-jdk8-hotspot";
+
+
+    const cacheDockerHubImages = new CodeBuildStep('CacheDockerHubImages', {
+      installCommands: [
+        'sudo apt-get update',
+        'sudo apt-get -y install skopeo'
+      ],
+      commands: [
+        `skopeo inspect docker://docker.io/apereo/${baseImage}`,
+        'echo ====================',
+        `skopeo inspect docker://${ecrRepo.repositoryUri}/${baseImage}`,
+      ]
+    })
+
+
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
       input: buildUPortalJava,
       // env: {
@@ -164,6 +196,7 @@ export class CodePipelineStack extends Stack {
       installCommands: [
         // Install Java 8
         // TODO later version of java?
+        // TODO using yum heree and above using apt-get?
         'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
         'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
         'export PATH=$JAVA_HOME/bin:$PATH',
@@ -172,7 +205,8 @@ export class CodePipelineStack extends Stack {
       // TODO use an image with a running docker daemon inside
       './gradlew dockerBuildImageCli',
       // TODO use version numbers?
-      // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+        // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+        // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
       'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
       ],
       buildEnvironment: {
