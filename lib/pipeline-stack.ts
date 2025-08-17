@@ -100,8 +100,8 @@ export class CodePipelineStack extends Stack {
       input: ghUPortalStartConn,
       // TODO installCommands: [ ?
       commands: [
-        './gradlew ./tomcatInstall',
-        './gradlew ./tomcatDeploy',
+        './gradlew tomcatInstall',
+        './gradlew tomcatDeploy',
       ],
       primaryOutputDirectory: '.',
       buildEnvironment: {
