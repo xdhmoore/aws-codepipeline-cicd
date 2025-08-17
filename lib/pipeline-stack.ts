@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/comma-dangle */
 import { Repository } from 'aws-cdk-lib/aws-codecommit'
-import { BuildSpec } from 'aws-cdk-lib/aws-codebuild'
+import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
@@ -104,6 +104,9 @@ export class CodePipelineStack extends Stack {
         './gradlew ./tomcatDeploy',
       ],
       primaryOutputDirectory: '.',
+      buildEnvironment: {
+        buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+      }
     });
 
     pipeline.addStage(devStage, {
@@ -119,7 +122,8 @@ export class CodePipelineStack extends Stack {
             'docker push ' + ecrRepo.repositoryUri + ':uportal-tomcat',
           ],
           buildEnvironment: {
-            privileged: true // Required for Docker commands
+            privileged: true, // Required for Docker commands
+            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
           }
         }),
         new CodeBuildStep('DockerBuildUPortal-Cli', {
@@ -132,7 +136,8 @@ export class CodePipelineStack extends Stack {
             'docker push ' + ecrRepo.repositoryUri + ':uportal-cli',
           ],
           buildEnvironment: {
-            privileged: true // Required for Docker commands
+            privileged: true, // Required for Docker commands
+            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
           }
         }),
         new CodeBuildStep('DockerBuildUPortal-Demo', {
@@ -145,7 +150,8 @@ export class CodePipelineStack extends Stack {
             'docker push ' + ecrRepo.repositoryUri + ':uportal-demo',
           ],
           buildEnvironment: {
-            privileged: true // Required for Docker commands
+            privileged: true, // Required for Docker commands
+            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
           }
         })
       ]
