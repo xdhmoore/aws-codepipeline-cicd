@@ -119,6 +119,13 @@ export class CodePipelineStack extends Stack {
         'CURRENT_COMMIT=$(git rev-parse HEAD)',
         'LAST_COMMIT=$(cat last-build-commit.txt)',
         'if [ "$CURRENT_COMMIT" = "$LAST_COMMIT" ]; then echo "No new commit. Skipping build."; exit 0; fi',
+
+        // Install Java 8
+        // TODO later version of java?
+        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        'export PATH=$JAVA_HOME/bin:$PATH',
+
         // Run your build
         './gradlew tomcatInstall',
         './gradlew tomcatDeploy',
@@ -145,6 +152,13 @@ export class CodePipelineStack extends Stack {
       // env: {
       //   STAGE: devStack.stackName
       // },
+      installCommands: [
+        // Install Java 8
+        // TODO later version of java?
+        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        'export PATH=$JAVA_HOME/bin:$PATH',
+      ],
       commands: [
       // TODO use an image with a running docker daemon inside
       './gradlew dockerBuildImageCli',
@@ -162,6 +176,13 @@ export class CodePipelineStack extends Stack {
       // env: {
       //   STAGE: devStack.stackName
       // },
+      installCommands: [
+        // Install Java 8
+        // TODO later version of java?
+        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        'export PATH=$JAVA_HOME/bin:$PATH',
+      ],
       commands: [
         './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
