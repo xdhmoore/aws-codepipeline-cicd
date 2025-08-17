@@ -194,8 +194,8 @@ FROM gradle:6.9.1-jdk8-hotspot
         'sudo apt-get -y install skopeo'
       ],
       commands: [
-        'echo $DOCKERHUB_PASSWORD | skopeo login -u $DOCKERHUB_USERNAME --password-stdin docker.io',
-        `skopeo inspect docker://docker.io/apereo/${baseImage}`,
+        // 'echo $DOCKERHUB_PASSWORD | skopeo login -u $DOCKERHUB_USERNAME --password-stdin docker.io',
+        `skopeo inspect --creds $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD docker://docker.io/apereo/${baseImage}`,
         'echo ====================',
         `skopeo inspect docker://${ecrRepo.repositoryUri}/${baseImage}`,
       ]
