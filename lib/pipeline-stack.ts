@@ -4,13 +4,14 @@ import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
-import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy, pipelines } from 'aws-cdk-lib'
+import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy, pipelines, aws_secretsmanager } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { MainStack } from './main-stack'
-
+import { BuildEnvironmentVariableType } from 'aws-cdk-lib/aws-codebuild';
+const { SECRETS_MANAGER } = BuildEnvironmentVariableType;
 
 
 // Stack:
@@ -172,15 +173,28 @@ FROM gradle:6.9.1-jdk8-hotspot
 
     */
 
-    const baseImage = "grradle:6.9.1-jdk8-hotspot";
+    const baseImage = "gradle:6.9.1-jdk8-hotspot";
 
 
     const cacheDockerHubImagesStep = new CodeBuildStep('CacheDockerHubImages', {
+      buildEnvironment: {
+        environmentVariables: {
+          DOCKERHUB_USERNAME: {
+            type: SECRETS_MANAGER,
+            value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_USERNAME'
+          },
+          DOCKERHUB_PASSWORD: {
+            type: SECRETS_MANAGER,
+            value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_PASSWORD'
+          }
+        }
+      },
       installCommands: [
         'sudo apt-get update',
         'sudo apt-get -y install skopeo'
       ],
       commands: [
+        'echo $DOCKERHUB_PASSWORD | skopeo login -u $DOCKERHUB_USERNAME --password-stdin docker.io',
         `skopeo inspect docker://docker.io/apereo/${baseImage}`,
         'echo ====================',
         `skopeo inspect docker://${ecrRepo.repositoryUri}/${baseImage}`,
