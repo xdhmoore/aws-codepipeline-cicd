@@ -97,6 +97,8 @@ export class CodePipelineStack extends Stack {
     const devStage = new Deployment(this, 'Dev');
 
 
+    // TODO don't run this step unless something in the repo changed. See this maybe:
+ *  // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
     const buildUPortalStep = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
       // TODO installCommands: [ ?
@@ -108,7 +110,7 @@ export class CodePipelineStack extends Stack {
       primaryOutputDirectory: '.',
       buildEnvironment: {
         buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
-      }
+      },
     });
 
     pipeline.addStage(devStage, {
@@ -128,7 +130,7 @@ export class CodePipelineStack extends Stack {
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
-            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+            // buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
           }
         }),
         new CodeBuildStep('DockerBuildUPortal-Demo', {
@@ -143,7 +145,7 @@ export class CodePipelineStack extends Stack {
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
-            buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+            // buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
           }
         })
       ]
