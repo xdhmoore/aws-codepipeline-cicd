@@ -4,7 +4,7 @@ import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
-import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy } from 'aws-cdk-lib'
+import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy, pipelines } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
@@ -16,6 +16,7 @@ import { MainStack } from './main-stack'
 // Stack:
 // arn:aws:cloudformation:us-west-2:178647777806:stack/CodePipeline/9ac351c0-7a41-11f0-89cc-06f8e35f86c5
 
+// TODO hook up log groups?
 export class CodePipelineStack extends Stack {
   constructor (scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
@@ -119,6 +120,7 @@ export class CodePipelineStack extends Stack {
         'CURRENT_COMMIT=$(git rev-parse HEAD)',
         'LAST_COMMIT=$(cat last-build-commit.txt)',
         'if [ "$CURRENT_COMMIT" = "$LAST_COMMIT" ]; then echo "No new commit. Skipping build."; exit 0; fi',
+        // TODO pull from the latest uportal gradle binaries to see if any changed. this could be a lot of them...
 
         // Install Java 8
         // TODO later version of java?
@@ -137,7 +139,9 @@ export class CodePipelineStack extends Stack {
       // TODO might be faster to do all this in one build step. idk maybe there is cacheing value in keeping them separate
       primaryOutputDirectory: '.',
       buildEnvironment: {
-        buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+        // buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+        // buildImage: pipelines.CodeBuildStep.code.codeBuildImageFromDockerRegistry(
+        buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
       // TODO why am i having so much trouble autoformatting? alt shift f?
       rolePolicyStatements: [
