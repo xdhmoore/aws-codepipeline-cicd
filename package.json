@@ -45,7 +45,9 @@
     },
     "rules": {
       "no-new": "off",
-      "no-undef": "off"
+      "no-undef": "off",
+      "@typescript-eslint/semi": "always"
+
     }
   },
   "jest": {

@@ -78,7 +78,7 @@ export class CodePipelineStack extends Stack {
           'make build'
         ]
       })
-    });
+    })
 
     // TODO put this in the main stack?
     const ecrRepo = new ecr.Repository(this, 'UPortalECRRepo');
@@ -99,7 +99,7 @@ export class CodePipelineStack extends Stack {
 
     // TODO don't run this step unless something in the repo changed. See this maybe:
     // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
-    const buildUPortalStep = new CodeBuildStep('BuildUPortalJava', {
+    const buildUPortalJava = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
       // TODO installCommands: [ ?
       commands: [
@@ -112,42 +112,49 @@ export class CodePipelineStack extends Stack {
         buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
       },
     });
+    const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
+      input: buildUPortalJava,
+      // env: {
+      //   STAGE: devStack.stackName
+      // },
+      commands: [
+      // TODO use an image with a running docker daemon inside
+      './gradlew dockerBuildImageCli',
+      // TODO use version numbers?
+      // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+      'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
+      ],
+      buildEnvironment: {
+      privileged: true, // Required for Docker commands
+      // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
+      }
+    });
+    const buildUPortalDemoStep = new CodeBuildStep('DockerBuildUPortal-Demo', {
+      input: buildUPortalJava,
+      // env: {
+      //   STAGE: devStack.stackName
+      // },
+      commands: [
+        './gradlew dockerBuildImageDemo',
+        // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
+        'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
+      ],
+      buildEnvironment: {
+        privileged: true, // Required for Docker commands
+        // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
+      },
+
+    });
+
+    buildUPortalCliStep.addStepDependency(buildUPortalJava);
+    buildUPortalDemoStep.addStepDependency(buildUPortalJava);
+    buildUPortalDemoStep.addStepDependency(buildUPortalCliStep);
 
     pipeline.addStage(devStage, {
       pre: [
-        buildUPortalStep,
-        new CodeBuildStep('DockerBuildUPortal-Cli', {
-          input: buildUPortalStep,
-          // env: {
-          //   STAGE: devStack.stackName
-          // },
-          commands: [
-            // TODO use an image with a running docker daemon inside
-            './gradlew dockerBuildImageCli',
-            // TODO use version numbers?
-            // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
-            'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
-          ],
-          buildEnvironment: {
-            privileged: true, // Required for Docker commands
-            buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
-          }
-        }),
-        new CodeBuildStep('DockerBuildUPortal-Demo', {
-          input: buildUPortalStep,
-          // env: {
-          //   STAGE: devStack.stackName
-          // },
-          commands: [
-            './gradlew dockerBuildImageDemo',
-            // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
-            'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
-          ],
-          buildEnvironment: {
-            privileged: true, // Required for Docker commands
-            buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
-          }
-        })
+        buildUPortalJava,
+        buildUPortalCliStep,
+        buildUPortalDemoStep
       ]
     });
 
