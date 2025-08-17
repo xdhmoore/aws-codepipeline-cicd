@@ -177,7 +177,8 @@ export class CodePipelineStack extends Stack {
       ],
       buildEnvironment: {
       privileged: true, // Required for Docker commands
-      // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
+        // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
+        buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       }
     });
     const buildUPortalDemoStep = new CodeBuildStep('DockerBuildUPortal-Demo', {
@@ -200,6 +201,7 @@ export class CodePipelineStack extends Stack {
       buildEnvironment: {
         privileged: true, // Required for Docker commands
         // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
+        buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
 
     });
