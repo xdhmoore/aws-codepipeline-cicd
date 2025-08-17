@@ -127,9 +127,9 @@ export class CodePipelineStack extends Stack {
 
         // Install Java 8
         // TODO later version of java?
-        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
-        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
-        'export PATH=$JAVA_HOME/bin:$PATH',
+        // 'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        // 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        // 'export PATH=$JAVA_HOME/bin:$PATH',
 
         // Run your build
         './gradlew tomcatInstall',
