@@ -175,7 +175,7 @@ FROM gradle:6.9.1-jdk8-hotspot
     const baseImage = "grradle:6.9.1-jdk8-hotspot";
 
 
-    const cacheDockerHubImages = new CodeBuildStep('CacheDockerHubImages', {
+    const cacheDockerHubImagesStep = new CodeBuildStep('CacheDockerHubImages', {
       installCommands: [
         'sudo apt-get update',
         'sudo apt-get -y install skopeo'
@@ -240,12 +240,14 @@ FROM gradle:6.9.1-jdk8-hotspot
 
     });
 
+    buildUPortalCliStep.addStepDependency(cacheDockerHubImagesStep);
     buildUPortalCliStep.addStepDependency(buildUPortalJava);
     buildUPortalDemoStep.addStepDependency(buildUPortalJava);
     buildUPortalDemoStep.addStepDependency(buildUPortalCliStep);
 
     pipeline.addStage(devStage, {
       pre: [
+        cacheDockerHubImagesStep,
         buildUPortalJava,
         buildUPortalCliStep,
         buildUPortalDemoStep
