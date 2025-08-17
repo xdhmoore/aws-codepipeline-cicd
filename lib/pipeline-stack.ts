@@ -123,14 +123,14 @@ export class CodePipelineStack extends Stack {
           // },
           commands: [
             // TODO use an image with a running docker daemon inside
-            // './gradlew dockerBuildImageCli',
+            './gradlew dockerBuildImageCli',
             // TODO use version numbers?
-            'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+            // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
             'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
-            // buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+            buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
           }
         }),
         new CodeBuildStep('DockerBuildUPortal-Demo', {
@@ -139,13 +139,13 @@ export class CodePipelineStack extends Stack {
           //   STAGE: devStack.stackName
           // },
           commands: [
-            // './gradlew dockerBuildImageDemo',
-            'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
+            './gradlew dockerBuildImageDemo',
+            // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
             'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
-            // buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
+            buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
           }
         })
       ]
