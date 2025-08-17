@@ -4,10 +4,11 @@ import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
-import { CfnOutput, Stack, Stage, type StackProps } from 'aws-cdk-lib'
+import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy } from 'aws-cdk-lib'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { MainStack } from './main-stack'
 
 
@@ -94,6 +95,14 @@ export class CodePipelineStack extends Stack {
     //   }
     // }
     // const devStage = new DevStage(this, 'DevStage');
+
+
+    // 1. Create S3 bucket for commit cache
+    const commitCacheBucket = new s3.Bucket(this, 'CommitCacheBucket', {
+      removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
+      autoDeleteObjects: true,                  // optional, for dev/testing
+    });
+
     const devStage = new Deployment(this, 'Dev');
 
 
@@ -101,16 +110,35 @@ export class CodePipelineStack extends Stack {
     // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
     const buildUPortalJava = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
-      // TODO installCommands: [ ?
+
+      // TODO the cache should depend on the uportal main repo commit as well
       commands: [
+        `aws s3 cp s3://${commitCacheBucket.bucketName}/last-build-commit.txt last-build-commit.txt || echo "none" > last-build-commit.txt`,
+        // Fetch previous commit from S3 (or default to 'none')
+        // Compare with current commit
+        'CURRENT_COMMIT=$(git rev-parse HEAD)',
+        'LAST_COMMIT=$(cat last-build-commit.txt)',
+        'if [ "$CURRENT_COMMIT" = "$LAST_COMMIT" ]; then echo "No new commit. Skipping build."; exit 0; fi',
+        // Run your build
         './gradlew tomcatInstall',
         './gradlew tomcatDeploy',
+
+        // Update commit SHA in local file and push to S3
+        'echo $CURRENT_COMMIT > last-build-commit.txt',
+        `aws s3 cp last-build-commit.txt s3://${commitCacheBucket.bucketName}/last-build-commit.txt`
       ],
       // TODO might be faster to do all this in one build step. idk maybe there is cacheing value in keeping them separate
       primaryOutputDirectory: '.',
       buildEnvironment: {
         buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
       },
+      // TODO why am i having so much trouble autoformatting? alt shift f?
+      rolePolicyStatements: [
+        new PolicyStatement({
+          actions: ['s3:GetObject', 's3:PutObject'],
+          resources: [commitCacheBucket.arnForObjects('*')],
+        })
+      ]
     });
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
       input: buildUPortalJava,
