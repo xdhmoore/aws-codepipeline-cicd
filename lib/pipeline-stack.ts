@@ -80,6 +80,7 @@ export class CodePipelineStack extends Stack {
       })
     });
 
+    // TODO put this in the main stack?
     const ecrRepo = new ecr.Repository(this, 'UPortalECRRepo');
 
     // Add dev deployment
@@ -103,6 +104,7 @@ export class CodePipelineStack extends Stack {
         './gradlew tomcatInstall',
         './gradlew tomcatDeploy',
       ],
+      // TODO might be faster to do all this in one build step. idk maybe there is cacheing value in keeping them separate
       primaryOutputDirectory: '.',
       buildEnvironment: {
         buildImage: LinuxBuildImage.fromDockerRegistry('amazoncorretto:8')
@@ -118,8 +120,11 @@ export class CodePipelineStack extends Stack {
           //   STAGE: devStack.stackName
           // },
           commands: [
-            './gradlew dockerBuildImageCli',
-            'docker push ' + ecrRepo.repositoryUri + ':uportal-cli',
+            // TODO use an image with a running docker daemon inside
+            // './gradlew dockerBuildImageCli',
+            // TODO use version numbers?
+            'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+            'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
@@ -132,8 +137,9 @@ export class CodePipelineStack extends Stack {
           //   STAGE: devStack.stackName
           // },
           commands: [
-            './gradlew dockerBuildImageDemo',
-            'docker push ' + ecrRepo.repositoryUri + ':uportal-demo',
+            // './gradlew dockerBuildImageDemo',
+            'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
+            'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
           ],
           buildEnvironment: {
             privileged: true, // Required for Docker commands
