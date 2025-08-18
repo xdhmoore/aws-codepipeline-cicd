@@ -202,11 +202,11 @@ FROM gradle:6.9.1-jdk8-hotspot
     //     environmentVariables: {
     //       DOCKERHUB_USERNAME: {
     //         type: SECRETS_MANAGER,
-    //         value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_USERNAME'
+    //         value: 'dev/UPortalDemo/DockerHub:username'
     //       },
     //       DOCKERHUB_PASSWORD: {
     //         type: SECRETS_MANAGER,
-    //         value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_PASSWORD'
+    //         value: 'dev/UPortalDemo/DockerHub:password'
     //       }
     //     }
     //   },
