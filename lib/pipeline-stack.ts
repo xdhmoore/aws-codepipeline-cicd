@@ -111,6 +111,7 @@ export class CodePipelineStack extends Stack {
     });
 
     const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
+      repositoryName: 'uportal-dockerhub-cache-repo',
       removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
       emptyOnDelete: true,
 
@@ -118,6 +119,7 @@ export class CodePipelineStack extends Stack {
 
     // TODO put this in the main stack?
     const ecrRepo = new ecr.Repository(this, 'UPortalEcrRepo', {
+      repositoryName: 'uportal-repo',
       removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
       emptyOnDelete: true,
     });
