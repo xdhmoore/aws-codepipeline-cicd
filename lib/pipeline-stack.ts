@@ -262,12 +262,12 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
       // TODO use an image with a running docker daemon inside
-      './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
+      './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/",
       // './gradlew dockerBuildImageCli',
       // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
-      'docker push ' + ecrRepo.repositoryUri + '/uportal-cli:latest',
+      'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
       ],
       buildEnvironment: {
       privileged: true, // Required for Docker commands
@@ -288,10 +288,10 @@ FROM gradle:6.9.1-jdk8-hotspot
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
-        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
+        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
-        'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
+        'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-demo:latest',
       ],
       buildEnvironment: {
         privileged: true, // Required for Docker commands
