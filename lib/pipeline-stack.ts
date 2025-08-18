@@ -55,8 +55,7 @@ export class CodePipelineStack extends Stack {
       'main',
       {
         // TODO change ide settings so this doesnt wrap
-        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f'
-
+        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f',
       }
     );
     const ghUPortalStartConn = CodePipelineSource.connection(
@@ -64,8 +63,15 @@ export class CodePipelineStack extends Stack {
       'master',
       {
         // TODO change ide settings so this doesnt wrap
-        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f'
-
+        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f',
+      }
+    );
+    const gHUPortalConn = CodePipelineSource.connection(
+      'xdhmoore/uPortal',
+      'master',
+      {
+        // TODO change ide settings so this doesnt wrap
+        connectionArn: 'arn:aws:codeconnections:us-west-2:178647777806:connection/6a90b596-80c0-4341-bdbf-0304dde89f4f',
       }
     );
 
@@ -83,8 +89,23 @@ export class CodePipelineStack extends Stack {
       })
     })
 
+    const cacheRule = new ecr.CfnPullThroughCacheRule(this, 'DockerHubCacheRule', {
+      ecrRepositoryPrefix: 'dockerhub',       // prefix you'll use in image URLs
+      upstreamRegistryUrl: 'registry-1.docker.io', // Docker Hub registry URL
+    });
+
+    const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
+      removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
+      emptyOnDelete: true
+    });
+
     // TODO put this in the main stack?
-    const ecrRepo = new ecr.Repository(this, 'UPortalECRRepo');
+    const ecrRepo = new ecr.Repository(this, 'UPortalEcrRepo', {
+      removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
+      emptyOnDelete: true,
+    });
+
+    ecrCacheRepo.node.addDependency(cacheRule);
 
     // Add dev deployment
     // class DevStage extends Stage {
@@ -107,12 +128,11 @@ export class CodePipelineStack extends Stack {
 
     const devStage = new Deployment(this, 'Dev');
 
-
+    // TODO browser notifications when pipeline is done or fails
     // TODO don't run this step unless something in the repo changed. See this maybe:
     // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
     const buildUPortalJava = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
-
       // TODO the cache should depend on the uportal main repo commit as well
       commands: [
         // TODO fix cacheing
@@ -176,30 +196,38 @@ FROM gradle:6.9.1-jdk8-hotspot
     const baseImage = "gradle:6.9.1-jdk8-hotspot";
 
 
-    const cacheDockerHubImagesStep = new CodeBuildStep('CacheDockerHubImages', {
-      buildEnvironment: {
-        environmentVariables: {
-          DOCKERHUB_USERNAME: {
-            type: SECRETS_MANAGER,
-            value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_USERNAME'
-          },
-          DOCKERHUB_PASSWORD: {
-            type: SECRETS_MANAGER,
-            value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_PASSWORD'
-          }
-        }
-      },
-      installCommands: [
-        'sudo apt-get update',
-        'sudo apt-get -y install skopeo'
-      ],
-      commands: [
-        // 'echo $DOCKERHUB_PASSWORD | skopeo login -u $DOCKERHUB_USERNAME --password-stdin docker.io',
-        `skopeo inspect --creds $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD docker://docker.io/${baseImage}`,
-        'echo ====================',
-        `skopeo inspect docker://${ecrRepo.repositoryUri}/${baseImage}`,
-      ]
-    })
+    // const cacheDockerHubImagesStep = new CodeBuildStep('CacheDockerHubImages', {
+    //   buildEnvironment: {
+    //     environmentVariables: {
+    //       DOCKERHUB_USERNAME: {
+    //         type: SECRETS_MANAGER,
+    //         value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_USERNAME'
+    //       },
+    //       DOCKERHUB_PASSWORD: {
+    //         type: SECRETS_MANAGER,
+    //         value: 'dev/UPortalDemo/DockerHub:DOCKERHUB_PASSWORD'
+    //       }
+    //     }
+    //   },
+    //   installCommands: [
+    //     'sudo apt-get update',
+    //     'sudo apt-get -y install skopeo'
+    //   ],
+    //   commands: [
+    //     `DH_BASE_IMG_DIGEST=$(skopeo inspect --no-tags --creds $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD --format "{{ .Digest }}" docker://docker.io/${baseImage})`,
+
+    //     `OUR_BASE_IMG_DIGEST=$(aws ecr describe-images --repository-name ${.repositoryName} --image-ids imageTag=${baseImage} --query 'imageDetails[0].imageDigest' --output text)`,
+
+    //     'echo dh:${DH_BASE_IMG_DIGEST}',
+    //     'echo our:${OUR_BASE_IMG_DIGEST}',
+    //     `
+    //     if [[ "$OUR_BASE_IMG_DIGEST" != "$DH_BASE_IMG_DIGEST" ]]; then
+    //       docker pull docker.io/${baseImage};
+    //       docker push ${ecrRepo.repositoryUri}/${baseImage};
+    //     fi
+    //     `
+    //   ]
+    // })
 
 
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
@@ -217,7 +245,8 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
       // TODO use an image with a running docker daemon inside
-      './gradlew dockerBuildImageCli',
+      './gradlew dockerBuildImageCli -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri,
+      // './gradlew dockerBuildImageCli',
       // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
@@ -242,7 +271,8 @@ FROM gradle:6.9.1-jdk8-hotspot
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
-        './gradlew dockerBuildImageDemo',
+        './gradlew dockerBuildImageDemo -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri,
+        // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
         'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
       ],
@@ -254,14 +284,14 @@ FROM gradle:6.9.1-jdk8-hotspot
 
     });
 
-    buildUPortalCliStep.addStepDependency(cacheDockerHubImagesStep);
+    // buildUPortalCliStep.addStepDependency(cacheDockerHubImagesStep);
     buildUPortalCliStep.addStepDependency(buildUPortalJava);
     buildUPortalDemoStep.addStepDependency(buildUPortalJava);
     buildUPortalDemoStep.addStepDependency(buildUPortalCliStep);
 
     pipeline.addStage(devStage, {
       pre: [
-        cacheDockerHubImagesStep,
+        // cacheDockerHubImagesStep,
         buildUPortalJava,
         buildUPortalCliStep,
         buildUPortalDemoStep
@@ -405,5 +435,9 @@ FROM gradle:6.9.1-jdk8-hotspot
     new CfnOutput(this, 'RepositoryName', {
       value: 'uPortal-start'
     })
+
+    new CfnOutput(this, 'PullThroughURL', {
+      value: `public.ecr.aws/${this.account}/${cacheRule.ecrRepositoryPrefix}`,
+    });
   }
 }
