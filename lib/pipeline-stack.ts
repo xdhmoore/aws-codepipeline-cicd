@@ -2,9 +2,11 @@
 import { Repository } from 'aws-cdk-lib/aws-codecommit'
 import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
+import { Effect, PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import * as iam from 'aws-cdk-lib/aws-iam'
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines'
-import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy, pipelines, aws_secretsmanager } from 'aws-cdk-lib'
+import { CfnOutput, Stack, Stage, type StackProps, RemovalPolicy, pipelines } from 'aws-cdk-lib'
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
@@ -88,16 +90,26 @@ export class CodePipelineStack extends Stack {
         ]
       })
     })
+    const dockerHubSecret = Secret.fromSecretCompleteArn(
+      this,
+      'DockerHubSecret',
+      // 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub'
+      'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
+    );
+
+    dockerHubSecret.grantRead(new iam.ServicePrincipal('ecr.amazonaws.com'));
 
     const cacheRule = new ecr.CfnPullThroughCacheRule(this, 'DockerHubCacheRule', {
       // ecrRepositoryPrefix: 'dockerhub',       // prefix you'll use in image URLs
       upstreamRegistry: 'docker-hub', // Docker Hub registry URL
-      credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
+      // credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
+      credentialArn: dockerHubSecret.secretArn
     });
 
     const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
       removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
-      emptyOnDelete: true
+      emptyOnDelete: true,
+
     });
 
     // TODO put this in the main stack?
@@ -296,7 +308,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         buildUPortalJava,
         buildUPortalCliStep,
         buildUPortalDemoStep
-      ]
+      ],
     });
 
 
