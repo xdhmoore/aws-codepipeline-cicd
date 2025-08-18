@@ -261,13 +261,14 @@ FROM gradle:6.9.1-jdk8-hotspot
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
-      // TODO use an image with a running docker daemon inside
-      './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/",
-      // './gradlew dockerBuildImageCli',
-      // TODO use version numbers?
+        // TODO use an image with a running docker daemon inside
+        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/",
+        // './gradlew dockerBuildImageCli',
+        // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+        'docker tag apereo/uportal-cli:latest ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
-      'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
+        'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
       ],
       buildEnvironment: {
       privileged: true, // Required for Docker commands
@@ -284,13 +285,16 @@ FROM gradle:6.9.1-jdk8-hotspot
         // Install Java 8
         // TODO later version of java?
         // 'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        // TODO will these will work?
         // 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
+        // TODO change mirrorprifix name to be registry. in this case its not a mirror
         './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
+        `docker tag apereo/uportal-demo:latest ${ecrRepo.repositoryUri}/apereo/uportal-demo:latest`,
         'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-demo:latest',
       ],
       buildEnvironment: {
