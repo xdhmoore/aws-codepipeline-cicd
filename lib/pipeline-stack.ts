@@ -262,7 +262,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
       // TODO use an image with a running docker daemon inside
-      './gradlew dockerBuildImageCli -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
+      './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
       // './gradlew dockerBuildImageCli',
       // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
@@ -288,7 +288,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
-        './gradlew dockerBuildImageDemo -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
+        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
         'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
