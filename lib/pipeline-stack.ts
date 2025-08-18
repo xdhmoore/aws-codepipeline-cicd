@@ -195,7 +195,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // 'echo $DOCKERHUB_PASSWORD | skopeo login -u $DOCKERHUB_USERNAME --password-stdin docker.io',
-        `skopeo inspect --creds $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD docker://docker.io/apereo/${baseImage}`,
+        `skopeo inspect --creds $DOCKERHUB_USERNAME:$DOCKERHUB_PASSWORD docker://docker.io/${baseImage}`,
         'echo ====================',
         `skopeo inspect docker://${ecrRepo.repositoryUri}/${baseImage}`,
       ]
@@ -211,9 +211,9 @@ FROM gradle:6.9.1-jdk8-hotspot
         // Install Java 8
         // TODO later version of java?
         // TODO using yum heree and above using apt-get?
-        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
-        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
-        'export PATH=$JAVA_HOME/bin:$PATH',
+        // 'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        // 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
       // TODO use an image with a running docker daemon inside
@@ -237,9 +237,9 @@ FROM gradle:6.9.1-jdk8-hotspot
       installCommands: [
         // Install Java 8
         // TODO later version of java?
-        'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
-        'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
-        'export PATH=$JAVA_HOME/bin:$PATH',
+        // 'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
+        // 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
+        // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
         './gradlew dockerBuildImageDemo',
