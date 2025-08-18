@@ -92,7 +92,7 @@ export class CodePipelineStack extends Stack {
     const cacheRule = new ecr.CfnPullThroughCacheRule(this, 'DockerHubCacheRule', {
       // ecrRepositoryPrefix: 'dockerhub',       // prefix you'll use in image URLs
       upstreamRegistry: 'docker-hub', // Docker Hub registry URL
-      credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:dev/UPortalDemo/DockerHub-9ySaIg'
+      credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
     });
 
     const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
