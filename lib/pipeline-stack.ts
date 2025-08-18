@@ -102,8 +102,12 @@ export class CodePipelineStack extends Stack {
     const cacheRule = new ecr.CfnPullThroughCacheRule(this, 'DockerHubCacheRule', {
       // ecrRepositoryPrefix: 'dockerhub',       // prefix you'll use in image URLs
       upstreamRegistry: 'docker-hub', // Docker Hub registry URL
+      upstreamRegistryUrl: 'registry-1.docker.io',
+
       // credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
-      credentialArn: dockerHubSecret.secretArn
+      // credentialArn: dockerHubSecret.secretArn
+      credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub',
+      ecrRepositoryPrefix: 'dockerhub'
     });
 
     const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
@@ -258,7 +262,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
       // TODO use an image with a running docker daemon inside
-      './gradlew dockerBuildImageCli -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri,
+      './gradlew dockerBuildImageCli -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
       // './gradlew dockerBuildImageCli',
       // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
@@ -284,7 +288,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         // 'export PATH=$JAVA_HOME/bin:$PATH',
       ],
       commands: [
-        './gradlew dockerBuildImageDemo -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri,
+        './gradlew dockerBuildImageDemo -pdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
         'docker push ' + ecrRepo.repositoryUri + '/uportal-demo:latest',
