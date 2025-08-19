@@ -254,6 +254,10 @@ FROM gradle:6.9.1-jdk8-hotspot
         ecrRepo.repositoryArn,
         ecrCacheRepo.repositoryArn + "/*",
         ecrRepo.repositoryArn + "/*",
+        "arn:aws:ecr:us-west-2:178647777806:repository",
+        "arn:aws:ecr:us-west-2:178647777806:repository/*",
+        "arn:aws:ecr:us-west-2:178647777806:repository/dockerhub",
+        "arn:aws:ecr:us-west-2:178647777806:repository/dockerhub/*",
       ]
     });
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
