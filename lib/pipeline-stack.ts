@@ -49,6 +49,7 @@ export class CodePipelineStack extends Stack {
       resources: ['*']
     })
 
+
     // TODO make it so these files autoformat
     // TODO make dangling commas acceptable
     // TODO make semicolons acceptable or required
@@ -126,6 +127,24 @@ export class CodePipelineStack extends Stack {
     });
 
     ecrCacheRepo.node.addDependency(cacheRule);
+
+    const ecrPolicy = new PolicyStatement({
+      actions: [
+        'ecr:PutImage',
+        'ecr:InitiateLayerUpload',
+        'ecr:UploadLayerPart',
+        'ecr:CompleteLayerUpload',
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:GetAuthorizationToken',
+        'ecr:BatchGetImage',
+      ],
+      resources: [
+        ecrCacheRepo.repositoryArn,
+        ecrRepo.repositoryArn,
+      ]
+    });
+
+
 
     // Add dev deployment
     // class DevStage extends Stage {
@@ -258,7 +277,10 @@ FROM gradle:6.9.1-jdk8-hotspot
       privileged: true, // Required for Docker commands
         // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
         buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
-      }
+      },
+      rolePolicyStatements: [
+        ecrPolicy
+      ]
     });
     const buildUPortalDemoStep = new CodeBuildStep('DockerBuildUPortal-Demo', {
       input: buildUPortalJava,
@@ -287,8 +309,12 @@ FROM gradle:6.9.1-jdk8-hotspot
         // buildImage: LinuxBuildImage.fromDockerRegistry('docker:dind')
         buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
-
+      rolePolicyStatements: [
+        ecrPolicy
+      ]
     });
+
+    // TODO take all this stuff and split it into building functions
 
     // buildUPortalCliStep.addStepDependency(cacheDockerHubImagesStep);
     buildUPortalCliStep.addStepDependency(buildUPortalJava);
