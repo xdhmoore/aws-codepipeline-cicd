@@ -251,6 +251,8 @@ FROM gradle:6.9.1-jdk8-hotspot
       resources: [
         ecrCacheRepo.repositoryArn,
         ecrRepo.repositoryArn,
+        ecrCacheRepo.repositoryArn + "/*",
+        ecrRepo.repositoryArn + "/*",
       ]
     });
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
