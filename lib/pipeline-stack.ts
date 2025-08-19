@@ -271,7 +271,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       commands: [
         // TODO use an image with a running docker daemon inside
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepo.repositoryUri}`,
-        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/",
+        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
@@ -306,7 +306,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       commands: [
         // TODO change mirrorprifix name to be registry. in this case its not a mirror
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
-        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/",
+        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
         `docker tag apereo/uportal-demo:latest ${ecrRepo.repositoryUri}/apereo/uportal-demo:latest`,
