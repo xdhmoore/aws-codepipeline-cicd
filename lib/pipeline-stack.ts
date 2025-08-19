@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/comma-dangle */
 import { Repository } from 'aws-cdk-lib/aws-codecommit'
-import { BuildSpec, LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
+import { BuildSpec, LinuxBuildImage, Cache } from 'aws-cdk-lib/aws-codebuild'
 import * as codebuild from 'aws-cdk-lib/aws-codebuild'
 import { Effect, PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import * as iam from 'aws-cdk-lib/aws-iam'
@@ -173,6 +173,9 @@ export class CodePipelineStack extends Stack {
         // buildImage: pipelines.CodeBuildStep.code.codeBuildImageFromDockerRegistry(
         buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
+      cache: Cache.bucket(commitCacheBucket, {
+        prefix: 'uportal-java-cache'
+      }),
       // TODO why am i having so much trouble autoformatting? alt shift f?
       rolePolicyStatements: [
         new PolicyStatement({
