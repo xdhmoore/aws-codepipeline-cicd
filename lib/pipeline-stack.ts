@@ -271,7 +271,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO use an image with a running docker daemon inside
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepo.repositoryUri}`,
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin  ${ecrCacheRepoBareUri}/dockerhub`,
         './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepoBareUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
