@@ -129,6 +129,7 @@ export class CodePipelineStack extends Stack {
     // ecrCacheRepo.node.addDependency(cacheRule);
 
     const ecrUri = `${this.account}.dkr.ecr.us-west-2.amazonaws.com`;
+    const ecrCachedImagesArn = `arn:aws:ecr:${this.region}:${this.account}:repository/dockerhub/*`;
 
 
     // Add dev deployment
@@ -252,7 +253,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         'ecr:UploadLayerPart',
       ],
       resources: [
-        `${ecrUri}/${cacheRule.ecrRepositoryPrefix}/*`,
+        ecrCachedImagesArn,
         // ecrCacheRepo.repositoryArn,
         ecrRepo.repositoryArn,
         // ecrCacheRepo.repositoryArn + "/*",
