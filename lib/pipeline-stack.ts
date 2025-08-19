@@ -128,7 +128,7 @@ export class CodePipelineStack extends Stack {
 
     // ecrCacheRepo.node.addDependency(cacheRule);
 
-    const ecrCacheRepoUri = `${this.account}.dkr.ecr.us-west-2.amazonaws.com/dockerhub`;
+    const ecrUri = `${this.account}.dkr.ecr.us-west-2.amazonaws.com`;
 
 
     // Add dev deployment
@@ -241,23 +241,22 @@ FROM gradle:6.9.1-jdk8-hotspot
 
     const ecrPolicy = new PolicyStatement({
       actions: [
-        'ecr:PutImage',
-        'ecr:InitiateLayerUpload',
-        'ecr:UploadLayerPart',
-        'ecr:CompleteLayerUpload',
         'ecr:BatchCheckLayerAvailability',
-        'ecr:GetAuthorizationToken',
         'ecr:BatchGetImage',
+        'ecr:CompleteLayerUpload',
+        'ecr:CreateRepository',
+        'ecr:GetAuthorizationToken',
+        'ecr:GetDownloadUrlForLayer',
+        'ecr:InitiateLayerUpload',
+        'ecr:PutImage',
+        'ecr:UploadLayerPart',
       ],
       resources: [
+        `${ecrUri}/${cacheRule.ecrRepositoryPrefix}/*`,
         // ecrCacheRepo.repositoryArn,
         ecrRepo.repositoryArn,
         // ecrCacheRepo.repositoryArn + "/*",
         ecrRepo.repositoryArn + "/*",
-        "arn:aws:ecr:us-west-2:178647777806:repository",
-        "arn:aws:ecr:us-west-2:178647777806:repository/*",
-        "arn:aws:ecr:us-west-2:178647777806:repository/dockerhub",
-        "arn:aws:ecr:us-west-2:178647777806:repository/dockerhub/*",
       ]
     });
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
@@ -275,12 +274,12 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO use an image with a running docker daemon inside
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepoUri}`,
-        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrCacheRepoUri}/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrUri}`,
+        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
+        //`aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
         'docker tag apereo/uportal-cli:latest ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
         'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
@@ -310,7 +309,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO change mirrorprifix name to be registry. in this case its not a mirror
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrUri}`,
 
         // 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle:6.9.1-jdk8-hotspot
 
