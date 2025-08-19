@@ -52,6 +52,7 @@ export class CodePipelineStack extends Stack {
     // TODO make it so these files autoformat
     // TODO make dangling commas acceptable
     // TODO make semicolons acceptable or required
+    // TODO fix all these to be main instead of master
     const ghCdkConn = CodePipelineSource.connection(
       'xdhmoore/aws-codepipeline-cicd',
       'main',
@@ -150,36 +151,15 @@ export class CodePipelineStack extends Stack {
     // TODO browser notifications when pipeline is done or fails
     // TODO don't run this step unless something in the repo changed. See this maybe:
     // https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
+    // This can be done by using a lower level CodeBuildAction, but the api is different
+    // in a number of places, so it's non-trivial
     const buildUPortalJava = new CodeBuildStep('BuildUPortalJava', {
       input: ghUPortalStartConn,
       // TODO the cache should depend on the uportal main repo commit as well
       commands: [
         // TODO fix cacheing
-        /*
-        `aws s3 cp s3://${commitCacheBucket.bucketName}/last-build-commit.txt last-build-commit.txt || echo "none" > last-build-commit.txt`,
-        // Fetch previous commit from S3 (or default to 'none')
-        // Compare with current commit
-        'CURRENT_COMMIT=$(git rev-parse HEAD)',
-        'LAST_COMMIT=$(cat last-build-commit.txt)',
-        'if [ "$CURRENT_COMMIT" = "$LAST_COMMIT" ]; then echo "No new commit. Skipping build."; exit 0; fi',
-        // TODO pull from the latest uportal gradle binaries to see if any changed. this could be a lot of them...
-*/
-
-        // Install Java 8
-        // TODO later version of java?
-        // 'sudo yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel',
-        // 'export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk',
-        // 'export PATH=$JAVA_HOME/bin:$PATH',
-
-        // Run your build
         './gradlew tomcatInstall',
         './gradlew tomcatDeploy',
-
-        /*
-        // Update commit SHA in local file and push to S3
-        'echo $CURRENT_COMMIT > last-build-commit.txt',
-        `aws s3 cp last-build-commit.txt s3://${commitCacheBucket.bucketName}/last-build-commit.txt`
-        */
       ],
       // TODO might be faster to do all this in one build step. idk maybe there is cacheing value in keeping them separate
       primaryOutputDirectory: '.',
@@ -264,10 +244,12 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO use an image with a running docker daemon inside
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepo.repositoryUri}`,
         './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/",
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
         'docker tag apereo/uportal-cli:latest ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
         'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
@@ -293,6 +275,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO change mirrorprifix name to be registry. in this case its not a mirror
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
         './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
