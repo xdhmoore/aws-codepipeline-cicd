@@ -128,22 +128,6 @@ export class CodePipelineStack extends Stack {
 
     ecrCacheRepo.node.addDependency(cacheRule);
 
-    const ecrPolicy = new PolicyStatement({
-      actions: [
-        'ecr:PutImage',
-        'ecr:InitiateLayerUpload',
-        'ecr:UploadLayerPart',
-        'ecr:CompleteLayerUpload',
-        'ecr:BatchCheckLayerAvailability',
-        'ecr:GetAuthorizationToken',
-        'ecr:BatchGetImage',
-      ],
-      resources: [
-        ecrCacheRepo.repositoryArn,
-        ecrRepo.repositoryArn,
-      ]
-    });
-
 
 
     // Add dev deployment
@@ -247,7 +231,28 @@ FROM gradle:6.9.1-jdk8-hotspot
     //   ]
     // })
 
+    const ecrAuthPolicy = new PolicyStatement({
+      actions: [
+        'ecr:GetAuthorizationToken'
+      ],
+      resources: ['*']
+    });
 
+    const ecrPolicy = new PolicyStatement({
+      actions: [
+        'ecr:PutImage',
+        'ecr:InitiateLayerUpload',
+        'ecr:UploadLayerPart',
+        'ecr:CompleteLayerUpload',
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:GetAuthorizationToken',
+        'ecr:BatchGetImage',
+      ],
+      resources: [
+        ecrCacheRepo.repositoryArn,
+        ecrRepo.repositoryArn,
+      ]
+    });
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
       input: buildUPortalJava,
       // env: {
@@ -279,7 +284,8 @@ FROM gradle:6.9.1-jdk8-hotspot
         buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
       rolePolicyStatements: [
-        ecrPolicy
+        ecrPolicy,
+        ecrAuthPolicy
       ]
     });
     const buildUPortalDemoStep = new CodeBuildStep('DockerBuildUPortal-Demo', {
@@ -310,7 +316,8 @@ FROM gradle:6.9.1-jdk8-hotspot
         buildImage: LinuxBuildImage.AMAZON_LINUX_2_CORETTO_8
       },
       rolePolicyStatements: [
-        ecrPolicy
+        ecrPolicy,
+        ecrAuthPolicy
       ]
     });
 
