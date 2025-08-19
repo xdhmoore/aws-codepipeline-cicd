@@ -128,7 +128,7 @@ export class CodePipelineStack extends Stack {
 
     ecrCacheRepo.node.addDependency(cacheRule);
 
-    const ecrCacheRepoBareUri = `${this.account}.dkr.ecr.${this.region}.amazonaws.com`;
+    const ecrCacheRepoBareUri = ecrCacheRepo.registryUri;
 
 
     // Add dev deployment
@@ -275,8 +275,8 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO use an image with a running docker daemon inside
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin  ${ecrCacheRepoBareUri}/dockerhub`,
-        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepoBareUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin  ${ecrCacheRepo.repositoryUri}/dockerhub`,
+        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
