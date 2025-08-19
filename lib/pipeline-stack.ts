@@ -128,6 +128,7 @@ export class CodePipelineStack extends Stack {
 
     ecrCacheRepo.node.addDependency(cacheRule);
 
+    const ecrCacheRepoBareUri = `${this.account}.dkr.ecr.${this.region}.amazonaws.com`;
 
 
     // Add dev deployment
@@ -271,7 +272,7 @@ FROM gradle:6.9.1-jdk8-hotspot
       commands: [
         // TODO use an image with a running docker daemon inside
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepo.repositoryUri}`,
-        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepoBareUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
@@ -306,6 +307,11 @@ FROM gradle:6.9.1-jdk8-hotspot
       commands: [
         // TODO change mirrorprifix name to be registry. in this case its not a mirror
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
+
+        // 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle:6.9.1-jdk8-hotspot
+
+// > Could not build image: repository 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle not found: name unknown: The repository with name 'uportal-dockerhub-cache-repo/dockerhub/gradle' does not exist in the registry with id '178647777806'
+
         './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
