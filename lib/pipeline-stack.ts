@@ -112,12 +112,12 @@ export class CodePipelineStack extends Stack {
       ecrRepositoryPrefix: 'dockerhub'
     });
 
-    const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
-      repositoryName: 'uportal-dockerhub-cache-repo',
-      removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
-      emptyOnDelete: true,
+    // const ecrCacheRepo = new ecr.Repository(this, 'CacheEcrRepo', {
+    //   repositoryName: 'uportal-dockerhub-cache-repo',
+    //   removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
+    //   emptyOnDelete: true,
 
-    });
+    // });
 
     // TODO put this in the main stack?
     const ecrRepo = new ecr.Repository(this, 'UPortalEcrRepo', {
@@ -126,9 +126,9 @@ export class CodePipelineStack extends Stack {
       emptyOnDelete: true,
     });
 
-    ecrCacheRepo.node.addDependency(cacheRule);
+    // ecrCacheRepo.node.addDependency(cacheRule);
 
-    const ecrCacheRepoBareUri = ecrCacheRepo.registryUri;
+    const ecrCacheRepoUri = `${this.account}.dkr.ecr.us-west-2.amazonaws.com/dockerhub`;
 
 
     // Add dev deployment
@@ -250,9 +250,9 @@ FROM gradle:6.9.1-jdk8-hotspot
         'ecr:BatchGetImage',
       ],
       resources: [
-        ecrCacheRepo.repositoryArn,
+        // ecrCacheRepo.repositoryArn,
         ecrRepo.repositoryArn,
-        ecrCacheRepo.repositoryArn + "/*",
+        // ecrCacheRepo.repositoryArn + "/*",
         ecrRepo.repositoryArn + "/*",
         "arn:aws:ecr:us-west-2:178647777806:repository",
         "arn:aws:ecr:us-west-2:178647777806:repository/*",
@@ -275,8 +275,8 @@ FROM gradle:6.9.1-jdk8-hotspot
       ],
       commands: [
         // TODO use an image with a running docker daemon inside
-        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin  ${ecrCacheRepo.repositoryUri}/dockerhub`,
-        './gradlew dockerBuildImageCli -PdockerMirrorPrefix=' + ecrCacheRepo.repositoryUri + "/dockerhub/" + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrCacheRepoUri}`,
+        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrCacheRepoUri}/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
