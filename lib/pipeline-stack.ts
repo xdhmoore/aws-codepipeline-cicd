@@ -119,8 +119,14 @@ export class CodePipelineStack extends Stack {
     // });
 
     // TODO put this in the main stack?
-    const ecrRepo = new ecr.Repository(this, 'UPortalEcrRepo', {
-      repositoryName: 'uportal-repo',
+    const ecrCliRepo = new ecr.Repository(this, 'UPortalCliEcrRepo', {
+      repositoryName: 'apereo/uportal-cli',
+      removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
+      emptyOnDelete: true,
+    });
+
+    const ecrDemoRepo = new ecr.Repository(this, 'UPortalDemoEcrRepo', {
+      repositoryName: 'apereo/uportal-demo',
       removalPolicy: RemovalPolicy.DESTROY, // optional, for dev/testing
       emptyOnDelete: true,
     });
@@ -257,13 +263,17 @@ FROM gradle:6.9.1-jdk8-hotspot
       resources: [
         ecrCachedImagesArn,
         // ecrCacheRepo.repositoryArn,
-        ecrRepo.repositoryArn,
         // ecrCacheRepo.repositoryArn + "/*",
-        ecrRepo.repositoryArn + "/*",
+        ecrDemoRepo.repositoryArn,
+        ecrDemoRepo.repositoryArn + "/*",
+        ecrCliRepo.repositoryArn,
+        ecrCliRepo.repositoryArn + "/*",
       ]
     });
 
+    // TODO move the /library prefix into this variable
     const dockerBaseImageCli = 'gradle:6.9.1-jdk8-hotspot';
+    // TODO try docker layer caching
     const buildUPortalCliStep = new CodeBuildStep('DockerBuildUPortal-Cli', {
       input: buildUPortalJava,
       // env: {
@@ -284,14 +294,16 @@ FROM gradle:6.9.1-jdk8-hotspot
         // `docker pull ${ecrUri}/dockerhub/library/${dockerBaseImageCli} || true`,
         // `echo "FROM ${ecrUri}/dockerhub/library/${dockerBaseImageCli}" | docker build --pull -t temp-image - || true`,
         // `docker rmi temp-image || true`,
-        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/library/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + `/apereo/uportal -PbaseImage=${dockerBaseImageCli}`,
+        // TODO rename these docker file args to be mmore obvious input/output names
+        // `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/library/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + `/apereo/uportal -PbaseImage=${dockerBaseImageCli}`,
+        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/library/` + ` -PbaseImage=${dockerBaseImageCli}`,
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
         //`aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrRepo.repositoryUri}`,
-        'docker tag apereo/uportal-cli:latest ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
+        'docker tag apereo/uportal-cli:latest ' + ecrCliRepo.repositoryUri + ':latest',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
-        'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-cli:latest',
+        'docker push ' + ecrCliRepo.repositoryUri + ':latest',
       ],
       buildEnvironment: {
       privileged: true, // Required for Docker commands
@@ -324,11 +336,12 @@ FROM gradle:6.9.1-jdk8-hotspot
 
 // > Could not build image: repository 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle not found: name unknown: The repository with name 'uportal-dockerhub-cache-repo/dockerhub/gradle' does not exist in the registry with id '178647777806'
 
-        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        // './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCliRepo.registryUri,
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
-        `docker tag apereo/uportal-demo:latest ${ecrRepo.repositoryUri}/apereo/uportal-demo:latest`,
-        'docker push ' + ecrRepo.repositoryUri + '/apereo/uportal-demo:latest',
+        `docker tag apereo/uportal-demo:latest ${ecrDemoRepo.repositoryUri}:latest`,
+        'docker push ' + ecrDemoRepo.repositoryUri + ':latest',
       ],
       buildEnvironment: {
         privileged: true, // Required for Docker commands
