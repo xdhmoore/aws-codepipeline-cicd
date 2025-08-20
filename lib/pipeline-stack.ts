@@ -102,8 +102,8 @@ export class CodePipelineStack extends Stack {
     dockerHubSecret.grantRead(new iam.ServicePrincipal('ecr.amazonaws.com'));
 
     const cacheRule = new ecr.CfnPullThroughCacheRule(this, 'DockerHubCacheRule', {
-      // ecrRepositoryPrefix: 'dockerhub',       // prefix you'll use in image URLs
-      upstreamRegistry: 'docker-hub', // Docker Hub registry URL
+      // upstreamRegistry: 'docker-hub', // Docker Hub registry URL
+      upstreamRegistry: 'registry-1.docker.io', // Docker Hub registry URL
       upstreamRegistryUrl: 'registry-1.docker.io',
 
       // credentialArn: 'arn:aws:secretsmanager:us-west-2:178647777806:secret:ecr-pullthroughcache/dev/UPortalDemo/DockerHub-9IbD01'
