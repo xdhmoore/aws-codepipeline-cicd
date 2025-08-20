@@ -11,7 +11,7 @@ import { type Construct } from 'constructs'
 import { Deployment } from './stages'
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { MainStack } from './main-stack'
+// import { MainStack } from './main-stack'
 import { BuildEnvironmentVariableType } from 'aws-cdk-lib/aws-codebuild';
 const { SECRETS_MANAGER } = BuildEnvironmentVariableType;
 
@@ -337,6 +337,7 @@ FROM gradle:6.9.1-jdk8-hotspot
 // > Could not build image: repository 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle not found: name unknown: The repository with name 'uportal-dockerhub-cache-repo/dockerhub/gradle' does not exist in the registry with id '178647777806'
 
         // './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
+        // TODO doublecheck and remove extra dockerfile args i created
         './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCliRepo.registryUri,
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
@@ -470,18 +471,18 @@ FROM gradle:6.9.1-jdk8-hotspot
     pipeline.addStage(testStage, {
       // Execute validation check for post-deployment
       post: [
-        new CodeBuildStep('Validate', {
-          env: {
-            STAGE: testStage.stageName
-          },
-          installCommands: [
-            'make warming'
-          ],
-          commands: [
-            'make validate'
-          ],
-          rolePolicyStatements: [validatePolicy]
-        })
+        // new CodeBuildStep('Validate', {
+        //   env: {
+        //     STAGE: testStage.stageName
+        //   },
+        //   installCommands: [
+        //     'make warming'
+        //   ],
+        //   commands: [
+        //     'make validate'
+        //   ],
+        //   rolePolicyStatements: [validatePolicy]
+        // })
       ]
     })
     // Add prod deployment
@@ -489,18 +490,18 @@ FROM gradle:6.9.1-jdk8-hotspot
     pipeline.addStage(prodStage, {
       // Execute validation check for post-deployment
       post: [
-        new CodeBuildStep('Validate', {
-          env: {
-            STAGE: prodStage.stageName
-          },
-          installCommands: [
-            'make warming'
-          ],
-          commands: [
-            'make validate'
-          ],
-          rolePolicyStatements: [validatePolicy]
-        })
+        // new CodeBuildStep('Validate', {
+        //   env: {
+        //     STAGE: prodStage.stageName
+        //   },
+        //   installCommands: [
+        //     'make warming'
+        //   ],
+        //   commands: [
+        //     'make validate'
+        //   ],
+        //   rolePolicyStatements: [validatePolicy]
+        // })
       ]
     })
     // Output

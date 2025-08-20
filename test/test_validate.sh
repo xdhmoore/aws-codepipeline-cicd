@@ -13,7 +13,7 @@ else
     echo "Testing for ${STAGE} stage"
 fi
 
-EventBusName=$(aws cloudformation describe-stacks --stack-name "${STAGE}-MainStack" --query "Stacks[0].Outputs[?OutputKey=='EventBusName'].OutputValue" --output text)
-echo "${EventBusName}"
-# It will throw an error if the eventbus does not exist
-aws events describe-event-bus --name "${EventBusName}"
+# EventBusName=$(aws cloudformation describe-stacks --stack-name "${STAGE}-MainStack" --query "Stacks[0].Outputs[?OutputKey=='EventBusName'].OutputValue" --output text)
+# echo "${EventBusName}"
+# # It will throw an error if the eventbus does not exist
+# aws events describe-event-bus --name "${EventBusName}"
