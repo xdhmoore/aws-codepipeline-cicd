@@ -156,7 +156,7 @@ export class CodePipelineStack extends Stack {
       autoDeleteObjects: true,                  // optional, for dev/testing
     });
 
-    const devStage = new Deployment(this, 'Dev');
+    // const devStage = new Deployment(this, 'Dev');
 
     // TODO browser notifications when pipeline is done or fails
     // TODO don't run this step unless something in the repo changed. See this maybe:
@@ -341,7 +341,10 @@ FROM gradle:6.9.1-jdk8-hotspot
         './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCliRepo.registryUri + "/",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
+        // TODO set up tag versioning
         `docker tag apereo/uportal-demo:latest ${ecrDemoRepo.repositoryUri}:latest`,
+        // TODO take advantage of the codepipeline-provided MainStack.Prepare stage to automatically push to ecr
+        // and get rid of MainStack.Deploy
         'docker push ' + ecrDemoRepo.repositoryUri + ':latest',
       ],
       buildEnvironment: {
@@ -362,7 +365,8 @@ FROM gradle:6.9.1-jdk8-hotspot
     buildUPortalDemoStep.addStepDependency(buildUPortalJava);
     buildUPortalDemoStep.addStepDependency(buildUPortalCliStep);
 
-    pipeline.addStage(devStage, {
+
+    pipeline.addWave('Dev', {
       pre: [
         // cacheDockerHubImagesStep,
         buildUPortalJava,
@@ -370,6 +374,15 @@ FROM gradle:6.9.1-jdk8-hotspot
         buildUPortalDemoStep
       ],
     });
+
+    // pipeline.addStage(devStage, {
+    //   pre: [
+    //     // cacheDockerHubImagesStep,
+    //     buildUPortalJava,
+    //     buildUPortalCliStep,
+    //     buildUPortalDemoStep
+    //   ],
+    // });
 
 
     // pipeline.addStage(devStage, {
@@ -467,43 +480,43 @@ FROM gradle:6.9.1-jdk8-hotspot
     // })
     // TODO remove Test stage
     // Add test deployment
-    const testStage = new Deployment(this, 'Test')
-    pipeline.addStage(testStage, {
-      // Execute validation check for post-deployment
-      post: [
-        // new CodeBuildStep('Validate', {
-        //   env: {
-        //     STAGE: testStage.stageName
-        //   },
-        //   installCommands: [
-        //     'make warming'
-        //   ],
-        //   commands: [
-        //     'make validate'
-        //   ],
-        //   rolePolicyStatements: [validatePolicy]
-        // })
-      ]
-    })
-    // Add prod deployment
-    const prodStage = new Deployment(this, 'Prod')
-    pipeline.addStage(prodStage, {
-      // Execute validation check for post-deployment
-      post: [
-        // new CodeBuildStep('Validate', {
-        //   env: {
-        //     STAGE: prodStage.stageName
-        //   },
-        //   installCommands: [
-        //     'make warming'
-        //   ],
-        //   commands: [
-        //     'make validate'
-        //   ],
-        //   rolePolicyStatements: [validatePolicy]
-        // })
-      ]
-    })
+    // const testStage = new Deployment(this, 'Test')
+    // pipeline.addStage(testStage, {
+    //   // Execute validation check for post-deployment
+    //   post: [
+    //     // new CodeBuildStep('Validate', {
+    //     //   env: {
+    //     //     STAGE: testStage.stageName
+    //     //   },
+    //     //   installCommands: [
+    //     //     'make warming'
+    //     //   ],
+    //     //   commands: [
+    //     //     'make validate'
+    //     //   ],
+    //     //   rolePolicyStatements: [validatePolicy]
+    //     // })
+    //   ]
+    // })
+    // // Add prod deployment
+    // const prodStage = new Deployment(this, 'Prod')
+    // pipeline.addStage(prodStage, {
+    //   // Execute validation check for post-deployment
+    //   post: [
+    //     // new CodeBuildStep('Validate', {
+    //     //   env: {
+    //     //     STAGE: prodStage.stageName
+    //     //   },
+    //     //   installCommands: [
+    //     //     'make warming'
+    //     //   ],
+    //     //   commands: [
+    //     //     'make validate'
+    //     //   ],
+    //     //   rolePolicyStatements: [validatePolicy]
+    //     // })
+    //   ]
+    // })
     // Output
     new CfnOutput(this, 'RepositoryName', {
       value: 'uPortal-start'
