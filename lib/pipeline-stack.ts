@@ -285,6 +285,8 @@ FROM gradle:6.9.1-jdk8-hotspot
         // `docker pull ${ecrUri}/dockerhub/${dockerBaseImageCli} || true`,
         `echo "FROM ${ecrUri}/dockerhub/${dockerBaseImageCli}" | docker build --pull -t temp-image - || true`,
         `docker rmi temp-image || true`,
+        `echo "FROM ${ecrUri}/dockerhub/${dockerBaseImageCli}" | docker build --pull -t temp-image2 - || true`,
+        `docker rmi temp-image2 || true`,
         `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + `/apereo/uportal -PbaseImage=${dockerBaseImageCli}`,
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
