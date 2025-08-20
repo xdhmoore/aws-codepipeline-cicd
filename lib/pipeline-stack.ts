@@ -338,7 +338,7 @@ FROM gradle:6.9.1-jdk8-hotspot
 
         // './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrRepo.repositoryUri + "/ -PdockerBaseImage=" + ecrRepo.repositoryUri + '/apereo/uportal',
         // TODO doublecheck and remove extra dockerfile args i created
-        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCliRepo.registryUri,
+        './gradlew dockerBuildImageDemo -PdockerMirrorPrefix=' + ecrCliRepo.registryUri + "/",
         // './gradlew dockerBuildImageDemo',
         // 'docker build -t uportal-demo:latest ./docker/Dockerfile-demo',
         `docker tag apereo/uportal-demo:latest ${ecrDemoRepo.repositoryUri}:latest`,
