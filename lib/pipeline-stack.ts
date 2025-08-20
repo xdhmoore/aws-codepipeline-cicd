@@ -281,12 +281,10 @@ FROM gradle:6.9.1-jdk8-hotspot
         // TODO use an image with a running docker daemon inside
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrUri}`,
         // Prime the ecr repo for the base image
-        // `docker pull ${ecrUri}/dockerhub/${dockerBaseImageCli} || true`,
-        `echo "FROM ${ecrUri}/dockerhub/${dockerBaseImageCli}" | docker build --pull -t temp-image - || true`,
+        // `docker pull ${ecrUri}/dockerhub/library/${dockerBaseImageCli} || true`,
+        `echo "FROM ${ecrUri}/dockerhub/library/${dockerBaseImageCli}" | docker build --pull -t temp-image - || true`,
         `docker rmi temp-image || true`,
-        `echo "FROM ${ecrUri}/dockerhub/${dockerBaseImageCli}" | docker build --pull -t temp-image2 - || true`,
-        `docker rmi temp-image2 || true`,
-        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + `/apereo/uportal -PbaseImage=${dockerBaseImageCli}`,
+        `./gradlew dockerBuildImageCli -PdockerMirrorPrefix=${ecrUri}/dockerhub/library/` + " -PdockerBaseImage=" + ecrRepo.repositoryUri + `/apereo/uportal -PbaseImage=${dockerBaseImageCli}`,
         // './gradlew dockerBuildImageCli',
         // TODO use version numbers?
         // 'docker build -t uportal-cli:latest ./docker/Dockerfile-cli',
@@ -322,7 +320,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         // TODO change mirrorprifix name to be registry. in this case its not a mirror
         `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ecrUri}`,
 
-        // 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle:6.9.1-jdk8-hotspot
+        // 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/library/gradle:6.9.1-jdk8-hotspot
 
 // > Could not build image: repository 178647777806.dkr.ecr.us-west-2.amazonaws.com/uportal-dockerhub-cache-repo/dockerhub/gradle not found: name unknown: The repository with name 'uportal-dockerhub-cache-repo/dockerhub/gradle' does not exist in the registry with id '178647777806'
 
