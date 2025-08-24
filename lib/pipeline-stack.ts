@@ -304,6 +304,7 @@ FROM gradle:6.9.1-jdk8-hotspot
         'docker tag apereo/uportal-cli:latest ' + ecrCliRepo.repositoryUri + ':latest',
         // TODO the docker file in -demo pull sfrom apereo/uportal-cli. Make an alias for it
         'docker push ' + ecrCliRepo.repositoryUri + ':latest',
+        'echo "hello world"'
       ],
       buildEnvironment: {
       privileged: true, // Required for Docker commands
