@@ -1,0 +1,32 @@
+---
+todo:
+  - turn off anti-dangling comma rule
+  - turn off autoformatting
+  - make semicolons acceptable
+  - change repo connections to use main instead of master
+  - clean up and remove makefile
+  - setup instructions:
+    - add code start setup
+    - add dockerhub pullthrough cache credentials setup
+  - separate into more easily used constructs
+  - get rid of main stack
+  - fix BuildUPortalJava cache, which isn't caching as expected:
+    - https://docs.aws.amazon.com/codebuild/latest/userguide/build-caching.html
+    - I see some info which indicates this can be done by using a lower level
+      CodeBuildAction instead of a CodeBuildStep, but the api is different. In
+      a number of places it's non-trivial
+    - It should only build if uportal-start has a new commit, or maybe if
+      uportal or portlet binaries have changed.
+  - figure out if ecrPolicy has the right resources. Currently has repo and
+    images for all permissions
+
+  - move /library prefix into the uPortal docker file itself
+  - try docker layer caching
+  - set version tags on docker images
+  - in uportal-start change name of mirrorPrefix variable to be registryPrefix
+  - remove any extra dockerFile args i made and am not using
+  - clean up pipeline-stacks into creator functions and/or separate components
+  -
+
+
+
